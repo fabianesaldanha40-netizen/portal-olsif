@@ -46,4 +46,35 @@ temp_exibida, vel_exibida = "— °C", "— km/h"
 status_texto = "STATUS OPERACIONAL DO TREM: AGUARDANDO DADOS"
 cor_painel = "#6c757d"
 cor_caixa_temp, cor_caixa_vel = "#f8f9fa", "#f8f9fa"
-cor_texto
+
+# SEPARADO EM DUAS LINHAS CURTAS PARA O SEU EDITOR NÃO CORTAR:
+cor_texto_temp = "#333333"
+cor_texto_vel = "#333333"
+
+status_conexao_temp = "CONECTANDO..."
+status_conexao_vel = "CONECTANDO..."
+temp_atual, vel_atual = None, None
+
+try:
+    resposta = requests.get(URL_FIREBASE, timeout=5).json()
+    
+    if resposta and isinstance(resposta, dict):
+        t_raw = resposta.get('temperatura_atual', resposta.get('temperatura atual', None))
+        v_raw = resposta.get('velocidade_atual', resposta.get('velocidade', None))
+        
+        temp_atual = converter_para_numero(t_raw)
+        vel_atual = converter_para_numero(v_raw)
+
+    # AJUSTE AQUI: Agora pega a Data e a Hora do momento exato da mudança
+    data_hora_agora = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
+
+    if temp_atual is not None or vel_atual is not None:
+        if temp_atual is not None: temp_exibida = f"{temp_atual} °C"
+        if vel_atual is not None: vel_exibida = f"{vel_atual} km/h"
+        
+        if (temp_atual and temp_atual >= limite_temp_pare) or (vel_atual and vel_atual >= limite_velocidade):
+            status_texto = "STATUS OPERACIONAL: PARE / RETIDO"
+            cor_painel = "#b00020"
+        elif temp_atual and temp_atual >= limite_temp_monitorar:
+            status_texto = "STATUS OPERACIONAL: MONITORAR"
+            cor_painel = "#f39c
