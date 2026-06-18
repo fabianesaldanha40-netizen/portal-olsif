@@ -57,7 +57,8 @@ try:
         temp_atual = converter_para_numero(t_raw)
         vel_atual = converter_para_numero(v_raw)
 
-    hora_agora = datetime.now().strftime('%H:%M:%S')
+    # AJUSTE AQUI: Agora pega a Data e a Hora do momento exato da mudança
+    data_hora_agora = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
 
     if temp_atual is not None or vel_atual is not None:
         if temp_atual is not None: temp_exibida = f"{temp_atual} °C"
@@ -92,12 +93,12 @@ try:
 
         if temp_atual != st.session_state.ultima_temp and temp_atual is not None:
             msg = f"Temperatura alterada para {temp_atual} °C. Status: {status_conexao_temp}."
-            st.session_state.historico_eventos.insert(0, {"Hora": hora_agora, "Componente": "Sensor Temp.", "Descrição / Logs": msg})
+            st.session_state.historico_eventos.insert(0, {"Data e Hora": data_hora_agora, "Componente": "Sensor Temp.", "Descrição / Logs": msg})
             st.session_state.ultima_temp = temp_atual
 
         if vel_atual != st.session_state.ultima_vel and vel_atual is not None:
             msg = f"Velocidade alterada para {vel_atual} km/h. Limites validados."
-            st.session_state.historico_eventos.insert(0, {"Hora": hora_agora, "Componente": "Sensor Vel.", "Descrição / Logs": msg})
+            st.session_state.historico_eventos.insert(0, {"Data e Hora": data_hora_agora, "Componente": "Sensor Vel.", "Descrição / Logs": msg})
             st.session_state.ultima_vel = vel_atual
     else:
         status_texto = "STATUS OPERACIONAL: AGUARDANDO SINAL"
