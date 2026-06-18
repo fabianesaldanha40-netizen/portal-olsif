@@ -32,9 +32,9 @@ def converter_para_numero(valor):
 st.markdown("<div style='background-color: #004d26; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 20px;'><h1 style='color: white; margin: 0; font-family: sans-serif; font-size: 30px;'>Portal OLSIF</h1></div>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; font-weight: bold; margin-bottom: 5px;'>Mini Gêmeo Digital Ferroviário (Fase 3)</h3>", unsafe_allow_html=True)
 
-# --- APENAS ESTA LINHA FOI ALTERADA PARA MOSTRAR O HORÁRIO DO SISTEMA EM TEMPO REAL ---
-data_hora_atual = datetime.now().strftime('%H:%M:%S')
-st.markdown(f"<p style='text-align: center; font-size: 14px;'>Monitoramento Analógico de Segurança - Carga: Etanol (UN 1170) - Vagão: BR-998 | Horário: {data_hora_atual}</p>", unsafe_allow_html=True)
+# --- ALTERAÇÃO EXCLUSIVA AQUI: Adicionado o horário dinâmico mantendo o seu texto intacto ---
+horario_atual_tela = datetime.now().strftime('%H:%M:%S')
+st.markdown(f"<p style='text-align: center; font-size: 14px;'>Monitoramento Analógico de Segurança - Carga: Etanol (UN 1170) - Vagão: BR-998 | Horário: {horario_atual_tela}</p>", unsafe_allow_html=True)
 
 # Limites Fixos Regulamentares
 limite_temp_monitorar = 40.0
@@ -60,5 +60,39 @@ try:
         temp_atual = converter_para_numero(t_raw)
         vel_atual = converter_para_numero(v_raw)
 
-    # AJUSTE AQUI: Agora pega a Data e a Hora do momento exato da mudança
-    data_hora_agora = datetime.now().strftime('%d/%m/%Y - %H:%M
+    # AJUSTE AQUI: Agora pega a Data e a Hora do moment exato da mudança
+    data_hora_agora = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
+
+    if temp_atual is not None or vel_atual is not None:
+        if temp_atual is not None: temp_exibida = f"{temp_atual} °C"
+        if vel_atual is not None: vel_exibida = f"{vel_atual} km/h"
+        
+        if (temp_atual and temp_atual >= limite_temp_pare) or (vel_atual and vel_atual >= limite_velocidade):
+            status_texto = "STATUS OPERACIONAL: PARE / RETIDO"
+            cor_painel = "#b00020"
+        elif temp_atual and temp_atual >= limite_temp_monitorar:
+            status_texto = "STATUS OPERACIONAL: MONITORAR"
+            cor_painel = "#f39c12"
+        else:
+            status_texto = "STATUS OPERACIONAL: LIBERADO"
+            cor_painel = "#2e9d52"
+
+        if temp_atual and temp_atual >= limite_temp_pare:
+            cor_caixa_temp, cor_texto_temp = "#fde8e8", "#b00020"
+            status_conexao_temp = "CRÍTICO"
+        elif temp_atual and temp_atual >= limite_temp_monitorar:
+            cor_caixa_temp, cor_texto_temp = "#fef3c7", "#d97706"
+            status_conexao_temp = "MONITORAR"
+        else:
+            cor_caixa_temp, cor_texto_temp = "#def7ec", "#03543f"
+            status_conexao_temp = "CONECTADO"
+
+        if vel_atual and vel_atual >= limite_velocidade:
+            cor_caixa_vel, cor_texto_vel = "#fde8e8", "#b00020"
+            status_conexao_vel = "EXCESSO VEL."
+        else:
+            cor_caixa_vel, cor_texto_vel = "#def7ec", "#03543f"
+            status_conexao_vel = "CONECTADO"
+
+        if temp_atual != st.session_state.ultima_temp and temp_atual is not None:
+            msg = f"Temperatura alterada para {temp_atual} °C. Status
