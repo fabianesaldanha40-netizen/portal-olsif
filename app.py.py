@@ -4,10 +4,16 @@ import time
 from datetime import datetime
 import pandas as pd
 
-st.set_page_config(page_title="Portal OLSIF", layout="centered")
+st.set_page_config(
+    page_title="Portal OLSIF",
+    layout="centered"
+)
 
-# URL corrigida apontando direto para a pasta de sensores do seu Firebase
-URL_FIREBASE = "https://portal-olsif-default-rtdb.firebaseio.com/sensores.json"
+# URL do seu Firebase
+URL_FIREBASE = (
+    "https://portal-olsif-default-rtdb."
+    "firebaseio.com/sensores.json"
+)
 
 # Inicializa o histórico na memória se ele não existir
 if 'historico_eventos' not in st.session_state:
@@ -29,12 +35,28 @@ def converter_para_numero(valor):
         return None
 
 # Cabeçalho do Portal OLSIF
-st.markdown("<div style='background-color: #004d26; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 20px;'><h1 style='color: white; margin: 0; font-family: sans-serif; font-size: 30px;'>Portal OLSIF</h1></div>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; font-weight: bold; margin-bottom: 5px;'>Mini Gêmeo Digital Ferroviário (Fase 3)</h3>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='background-color: #004d26; padding: 15px; "
+    "border-radius: 5px; text-align: center; margin-bottom: 20px;'>"
+    "<h1 style='color: white; margin: 0; font-family: sans-serif; "
+    "font-size: 30px;'>Portal OLSIF</h1></div>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h3 style='text-align: center; font-weight: bold; "
+    "margin-bottom: 5px;'>Mini Gêmeo Digital Ferroviário "
+    "(Fase 3)</h3>",
+    unsafe_allow_html=True
+)
 
-# --- ALTERAÇÃO SOLICITADA: Linha curta com a hora atualizando dinamicamente ---
+# --- HORÁRIO DINÂMICO QUE ATUALIZA NA TELA ---
 horario_atual = datetime.now().strftime('%H:%M:%S')
-st.markdown(f"<p style='text-align: center; font-size: 14px;'>Monitoramento Analógico de Segurança - Carga: Etanol (UN 1170) - Vagão: BR-998 | Horário: {horario_atual}</p>", unsafe_allow_html=True)
+st.markdown(
+    f"<p style='text-align: center; font-size: 14px;'>"
+    f"Monitoramento Analógico de Segurança - Carga: Etanol "
+    f"(UN 1170) - Vagão: BR-998 | Horário: {horario_atual}</p>",
+    unsafe_allow_html=True
+)
 
 # Limites Fixos Regulamentares
 limite_temp_monitorar = 40.0
@@ -46,11 +68,7 @@ temp_exibida, vel_exibida = "— °C", "— km/h"
 status_texto = "STATUS OPERACIONAL DO TREM: AGUARDANDO DADOS"
 cor_painel = "#6c757d"
 cor_caixa_temp, cor_caixa_vel = "#f8f9fa", "#f8f9fa"
-
-# SEPARADO EM DUAS LINHAS CURTAS PARA O SEU EDITOR NÃO CORTAR:
-cor_texto_temp = "#333333"
-cor_texto_vel = "#333333"
-
+cor_texto_temp, cor_texto_vel = "#333333", "#333333"
 status_conexao_temp = "CONECTANDO..."
 status_conexao_vel = "CONECTANDO..."
 temp_atual, vel_atual = None, None
@@ -59,22 +77,170 @@ try:
     resposta = requests.get(URL_FIREBASE, timeout=5).json()
     
     if resposta and isinstance(resposta, dict):
-        t_raw = resposta.get('temperatura_atual', resposta.get('temperatura atual', None))
-        v_raw = resposta.get('velocidade_atual', resposta.get('velocidade', None))
+        t_raw = resposta.get(
+            'temperatura_atual',
+            resposta.get('temperatura atual', None)
+        )
+        v_raw = resposta.get(
+            'velocidade_atual',
+            resposta.get('velocidade', None)
+        )
         
         temp_atual = converter_para_numero(t_raw)
         vel_atual = converter_para_numero(v_raw)
 
-    # AJUSTE AQUI: Agora pega a Data e a Hora do momento exato da mudança
+    # Pega a Data e a Hora do momento exato da mudança
     data_hora_agora = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
 
     if temp_atual is not None or vel_atual is not None:
-        if temp_atual is not None: temp_exibida = f"{temp_atual} °C"
-        if vel_atual is not None: vel_exibida = f"{vel_atual} km/h"
+        if temp_atual is not None:
+            temp_exibida = f"{temp_atual} °C"
+        if vel_atual is not None:
+            vel_exibida = f"{vel_atual} km/h"
         
-        if (temp_atual and temp_atual >= limite_temp_pare) or (vel_atual and vel_atual >= limite_velocidade):
+        cond_pare_t = temp_atual and temp_atual >= limite_temp_pare
+        cond_pare_v = vel_atual and vel_atual >= limite_velocidade
+        
+        if cond_pare_t or cond_pare_v:
             status_texto = "STATUS OPERACIONAL: PARE / RETIDO"
             cor_painel = "#b00020"
         elif temp_atual and temp_atual >= limite_temp_monitorar:
             status_texto = "STATUS OPERACIONAL: MONITORAR"
-            cor_painel = "#f39c
+            cor_painel = "#f39c12"
+        else:
+            status_texto = "STATUS OPERACIONAL: LIBERADO"
+            cor_painel = "#2e9d52"
+
+        if temp_atual and temp_atual >= limite_temp_pare:
+            cor_caixa_temp, cor_texto_temp = "#fde8e8", "#b00020"
+            status_conexao_temp = "CRÍTICO"
+        elif temp_atual and temp_atual >= limite_temp_monitorar:
+            cor_caixa_temp, cor_texto_temp = "#fef3c7", "#d97706"
+            status_conexao_temp = "MONITORAR"
+        else:
+            cor_caixa_temp, cor_texto_temp = "#def7ec", "#03543f"
+            status_conexao_temp = "CONECTADO"
+
+        if vel_atual and vel_atual >= limite_velocidade:
+            cor_caixa_vel, cor_texto_vel = "#fde8e8", "#b00020"
+            status_conexao_vel = "EXCESSO VEL."
+        else:
+            cor_caixa_vel, cor_texto_vel = "#def7ec", "#03543f"
+            status_conexao_vel = "CONECTADO"
+
+        if (temp_atual != st.session_state.ultima_temp and
+                temp_atual is not None):
+            msg = (
+                f"Temperatura alterada para {temp_atual} °C. "
+                f"Status: {status_conexao_temp}."
+            )
+            st.session_state.historico_eventos.insert(
+                0, {
+                    "Data e Hora": data_hora_agora,
+                    "Componente": "Sensor Temp.",
+                    "Descrição / Logs": msg
+                }
+            )
+            st.session_state.ultima_temp = temp_atual
+
+        if (vel_atual != st.session_state.ultima_vel and
+                vel_atual is not None):
+            msg = (
+                f"Velocidade alterada para {vel_atual} km/h. "
+                f"Limites validados."
+            )
+            st.session_state.historico_eventos.insert(
+                0, {
+                    "Data e Hora": data_hora_agora,
+                    "Componente": "Sensor Vel.",
+                    "Descrição / Logs": msg
+                }
+            )
+            st.session_state.ultima_vel = vel_atual
+    else:
+        status_texto = "STATUS OPERACIONAL: AGUARDANDO SINAL"
+        cor_painel = "#6c757d"
+        status_conexao_temp = "SEM SINAL"
+        status_conexao_vel = "SEM SINAL"
+
+except Exception as erro:
+    status_texto = "STATUS OPERACIONAL: ERRO DE CONEXÃO"
+    cor_painel = "#b00020"
+    cor_caixa_temp, cor_caixa_vel = "#fde8e8", "#fde8e8"
+    cor_texto_temp, cor_texto_vel = "#b00020", "#b00020"
+    status_conexao_temp, status_conexao_vel = "ERRO", "ERRO"
+
+st.markdown(
+    f"<div style='background-color: {cor_painel}; padding: 15px; "
+    f"border-radius: 8px; text-align: center; margin-bottom: 25px;'>"
+    f"<h2 style='color: white; margin: 0; font-size: 22px; "
+    f"font-weight: bold;'>{status_texto}</h2></div>",
+    unsafe_allow_html=True
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    html_temp = (
+        "<div style='background-color: " + cor_caixa_temp +
+        "; border: 1px solid " + cor_texto_temp +
+        "40; padding: 25px; border-radius: 12px; "
+        "text-align: center; margin-bottom: 10px;'>"
+        "<p style='margin: 0; font-size: 13px; font-weight: bold; "
+        "color: #555555; text-transform: uppercase;'>"
+        "⚙️ SENSOR DE TEMPERATURA</p>"
+        "<h1 style='margin: 15px 0; font-size: 42px; color: " +
+        cor_texto_temp + "; font-weight: bold;'>" +
+        temp_exibida + "</h1></div>"
+    )
+    st.markdown(html_temp, unsafe_allow_html=True)
+    
+    if status_conexao_temp in ["CRÍTICO", "ERRO"]:
+        st.error(f"Alerta: {status_conexao_temp}")
+    elif status_conexao_temp == "MONITORAR":
+        st.warning("Alerta: MONITORAR")
+    else:
+        st.success(f"Status: {status_conexao_temp}")
+
+with col2:
+    html_vel = (
+        "<div style='background-color: " + cor_caixa_vel +
+        "; border: 1px solid " + cor_texto_vel +
+        "40; padding: 25px; border-radius: 12px; "
+        "text-align: center; margin-bottom: 10px;'>"
+        "<p style='margin: 0; font-size: 13px; font-weight: bold; "
+        "color: #555555; text-transform: uppercase;'>"
+        "⚡ SENSOR DE VELOCIDADE</p>"
+        "<h1 style='margin: 15px 0; font-size: 42px; color: " +
+        cor_texto_vel + "; font-weight: bold;'>" +
+        vel_exibida + "</h1></div>"
+    )
+    st.markdown(html_vel, unsafe_allow_html=True)
+    
+    if status_conexao_vel in ["EXCESSO VEL.", "ERRO"]:
+        st.error(f"Alerta: {status_conexao_vel}")
+    else:
+        st.success(f"Status: {status_conexao_vel}")
+
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("### 📋 Registro de Eventos da ANTT (Resolução nº 5.998/22)")
+
+if st.session_state.historico_eventos:
+    df_historico = pd.DataFrame(st.session_state.historico_eventos[:5])
+    st.dataframe(df_historico, width="stretch", hide_index=True)
+else:
+    st.info(
+        "Aguardando alteração de dados no Firebase "
+        "para gerar os logs na tabela..."
+    )
+
+st.markdown(
+    "<br><br><div style='background-color: #343a40; padding: 20px; "
+    "text-align: center; margin-top: 30px;'><p style='color: white; "
+    "margin: 0; font-size: 13px;'>© 2026 OLSIF - Logística "
+    "Ferroviária Inteligente.</p></div>",
+    unsafe_allow_html=True
+)
+
+time.sleep(2)
+st.rerun()
