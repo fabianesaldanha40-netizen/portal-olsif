@@ -16,27 +16,65 @@ if 'ultima_vel' not in st.session_state:
     st.session_state.ultima_vel = None
 
 def converter_para_numero(valor):
-    if valor is None:
-        return None
+    if valor is None: return None
     try:
         if isinstance(valor, str):
             valor = valor.lower().replace('o', '0').strip()
         return float(valor)
-    except:
-        return None
+    except: return None
 
-# --- CABEÇALHO SEGURO CONTRA QUEBRAS DE LINHA ---
-st.markdown("<div style='background-color: #004d26; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 20px;'><h1 style='color: white; margin: 0; font-family: sans-serif; font-size: 30px;'>Portal OLSIF</h1></div>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; font-weight: bold; margin-bottom: 5px;'>Mini Gêmeo Digital Ferroviário (Fase 3)</h3>", unsafe_allow_html=True)
+# --- CABEÇALHO COMPACTO (LINHAS CURTAS PARA EVITAR CORTES) ---
+st.markdown("<h1 style='text-align: center; color: #004d26;'>Portal OLSIF</h1>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center;'>Gêmeo Digital Ferroviário (Fase 3)</h4>", unsafe_allow_html=True)
 
-hora_atual_sistema = datetime.now().strftime('%H:%M:%S')
+H_AGORA = datetime.now().strftime('%H:%M:%S')
+INFO_TXT = f"Vagão: BR-998 | Evento: Anitta | Data: 19/06/2026 | Horário: {H_AGORA}"
+st.markdown(f"<p style='text-align: center; font-weight: bold; color: #004d26;'>{INFO_TXT}</p>", unsafe_allow_html=True)
 
-# Usando aspas triplas para evitar o erro se o editor quebrar a linha
-texto_sub = f"""Monitoramento Analógico - Carga: Etanol (UN 1170) - Vagão: BR-998 
-| Evento: Anitta | Data: 19/06/2026 | Horário: {hora_atual_sistema}"""
+# Limites Fixos Regulamentares
+L_TEMP_M = 40.0
+L_TEMP_P = 60.0
+L_VEL = 80.0
 
-st.markdown(f"<p style='text-align: center; font-size: 14px; font-weight: bold; color: #004d26;'>{texto_sub}</p>", unsafe_allow_html=True)
+temp_exibida, vel_exibida = "— °C", "— km/h"
+status_texto = "STATUS: AGUARDANDO DADOS"
+cor_painel = "#6c757d"
+cor_caixa_temp, cor_caixa_vel = "#f8f9fa", "#f8f9fa"
+cor_texto_temp, cor_texto_vel = "#333333", "#333333"
+status_conexao_temp, status_conexao_vel = "CONECTANDO...", "CONECTANDO..."
 
-limite_temp_monitorar = 40.0
-limite_temp_pare = 60.0
-lim
+try:
+    resposta = requests.get(URL_FIREBASE, timeout=5).json()
+    if resposta and isinstance(resposta, dict):
+        t_raw = resposta.get('temperatura_atual', resposta.get('temperatura atual', None))
+        v_raw = resposta.get('velocidade_atual', resposta.get('velocidade', None))
+        temp_atual = converter_para_numero(t_raw)
+        vel_atual = converter_para_numero(v_raw)
+    else:
+        temp_atual, vel_atual = None, None
+
+    data_hora_log = datetime.now().strftime('%d/%m/%Y - %H:%M:%S')
+
+    if temp_atual is not None or vel_atual is not None:
+        if temp_atual is not None: temp_exibida = f"{temp_atual} °C"
+        if vel_atual is not None: vel_exibida = f"{vel_atual} km/h"
+        
+        if (temp_atual and temp_atual >= L_TEMP_P) or (vel_atual and vel_atual >= L_VEL):
+            status_texto = "STATUS OPERACIONAL: PARE / RETIDO"
+            cor_painel = "#b00020"
+        elif temp_atual and temp_atual >= L_TEMP_M:
+            status_texto = "STATUS OPERACIONAL: MONITORAR"
+            cor_painel = "#f39c12"
+        else:
+            status_texto = "STATUS OPERACIONAL: LIBERADO"
+            cor_painel = "#2e9d52"
+
+        if temp_atual and temp_atual >= L_TEMP_P:
+            cor_caixa_temp, cor_texto_temp = "#fde8e8", "#b00020"
+            status_conexao_temp = "CRÍTICO"
+        elif temp_atual and temp_atual >= L_TEMP_M:
+            cor
+
+
+
+
